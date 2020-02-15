@@ -1,0 +1,22 @@
+export const SET_ACCESS_TOKEN = 'SET_ACCESS_TOKEN'
+export const SET_MY_INFO = 'SET_MY_INFO'
+export const DESTROY_ACCESS_TOKEN = 'DESTROY_ACCESS_TOKEN'
+export const DESTROY_MY_INFO = 'DESTROY_MY_INFO'
+
+
+export const FETCH_POST = 'FETCH_POST'
+
+export const UPDATE_COMMENT = 'UPDATE_COMMENT'
+export const DELETE_COMMENT = 'DELETE_COMMENT'
+export const EDIT_COMMENT = 'EDIT_COMMENT'
+
+export const CREATE_PAGE = 'CREATE_PAGE'
+export const FETCH_POST_LIST = 'FETCH_POST_LIST'
+export const FETCH_POST_BY_INDEX = 'FETCH_POST_BY_INDEX'
+export const GET_POST_BY_INDEX = 'GET_POST_BY_INDEX'
+export const GET_POST_BY_ID = 'GET_POST_BY_ID'
+export const UPDATE_POST_BY_ID = 'UPDATE_POST_BY_ID'
+export const DELETE_POST_BY_ID = 'DELETE_POST_BY_ID'
+export const SIGN_IN = 'SIGN_IN'
+export const WATCH_USER = 'WATCH_USER'
+export const SIGN_OUT = 'SIGN_OUT'
