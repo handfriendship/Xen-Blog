@@ -45,7 +45,7 @@ export default {
       var postID = this.curPost.postID;
       var curTime = this.getCurrentTime();
       this.editPostByID({...payload, postID: postID, postId: this.$route.params.postId, curTime: curTime});
-      // this.$router.push({name: 'PostViewPage', params: {postId: this.$route.params.postId, postID: postID} });
+      
     },
     ...mapActions([
       'fetchPostByIndex', 'editPostByID',

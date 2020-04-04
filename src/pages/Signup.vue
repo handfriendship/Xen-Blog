@@ -23,10 +23,6 @@ export default {
       var userID = new Date().getTime();
 
       this.signupAction(payload);
-      // this.$emit('signup', {...payload, userID: userID, authorized: false});
-      // this.$router.push({name: 'Signin' });
-
-
     },
     signupWithGoogle: function(){
       this.signupWithGoogle();

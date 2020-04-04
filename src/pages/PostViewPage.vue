@@ -1,6 +1,8 @@
 <template>
   <div class="post-view-page">
-    <PostView :curPost="curPost" @update:post="curPost" @sendAuthor="getAuthorFromChild" :index="$route.params.postId">
+    <PostView @update:post="curPost" @sendAuthor="getAuthorFromChild"
+              :curPost="curPost" :index="$route.params.postId"
+              :query="query">
       <!-- 지금 이 props가 늦게오는 문제를 slot 으로도 해결할 수 있음 ! -->
     </PostView>
     <p></p>
@@ -27,15 +29,22 @@ export default {
   },
   created(){
     console.log("PostViewPage => created called!");
+    if(JSON.stringify(this.$route.query) == '{}' || this.$route.query == '' || this.$route.query == null){
+      console.log("PostViewPage -> query in if");
+    } else {
+      console.log("PostViewPage -> query in else");
+      console.log("PostViewPage -> this.$route.query : ", this.$route.query);
+      // this.query = JSON.parse(this.$route.query).search;
+      this.query = this.$route.query;
+    }
     this.fetchPostByIndex(this.$route.params.postId);
   },
   updated() {
     console.log("PostViewPage => updated called!");
-    console.log("PostViewPage => updated => this.curPost : ", this.curPost);
   },
   data (){
     return {
-      post: {}, data: 'data1', author: '',
+      post: {}, data: 'data1', author: '', query: {},
     }
   },
   props: {

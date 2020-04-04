@@ -9,6 +9,7 @@ import PostEditPage from '@/pages/PostEditPage'
 import PostViewPage from '@/pages/PostViewPage'
 import App from '@/App'
 import store from '@/store'
+import Algolia from '@/Algolia.js'
 
 Vue.use(Router)
 
@@ -53,11 +54,15 @@ const router = new Router({
       // }
       beforeEnter: async (to, from, next) => {
         console.log("router guard of create");
+
         var cookieUser = await Vue.prototype.$Cookie.get('user');
         var storeUser = store.state.user;
-        var isCookie = cookieUser == JSON.stringify({}) ? 0 : 1;
-        var isLogin = JSON.stringify(storeUser) == JSON.stringify({}) ? 0 : 1;
-        
+        var isCookie = cookieUser == JSON.stringify({}) || cookieUser == undefined || cookieUser == null ? 0 : 1;
+        var isLogin = JSON.stringify(storeUser) == JSON.stringify({}) || storeUser == undefined || storeUser == null ? 0 : 1;
+        console.log("isCookie : ", isCookie);
+        console.log("isLogin : ", isLogin);
+        console.log("cookie content : ", Vue.prototype.$Cookie.get());
+        console.log("cookieUser : ", cookieUser);
         if(!isLogin && !isCookie){
           alert("로그인 후 이용하실 수 있습니다.");
           next({name: 'Signin'});
@@ -97,6 +102,8 @@ const router = new Router({
 
 router.beforeEach((to, from, next) => {
   console.log("router.beforeEach called!");
+  Algolia.searchIndex('Jim');
+
   next();
 })
 

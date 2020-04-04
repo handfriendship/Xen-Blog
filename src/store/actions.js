@@ -8,6 +8,7 @@ import {
   DELETE_POST_BY_ID,
   SIGN_IN,
   SIGN_OUT,
+  ALGOLIA_SEARCH,
   // SET_ACCESS_TOKEN,
   // SET_MY_INFO,
   // DESTROY_ACCESS_TOKEN,
@@ -15,6 +16,8 @@ import {
 } from './mutation-types'
 import firebase from 'firebase';
 import router from '../router/index.js';
+import store from '@/store';
+import Algolia from '@/Algolia.js';
 
 // var testRef = firebase.firestore().collection("test");
 var getPostID = function(state, postIndex){
@@ -27,22 +30,63 @@ var getPostID = function(state, postIndex){
   return targetElement;
 }
 
+var getUserStatus = function(){
+  console.log("getUserStatus called!");
+
+  return new Promise(function(resolve, reject){
+    firebase.auth().onAuthStateChanged((user) => {
+      console.log("onAuthStateChanged hook called!");
+      console.log("onAuthStateChanged - user : ", user);
+      if (user) {
+        console.log("onAuthStateChanged - in if");
+        var displayName = user.displayName;
+        var email = user.email;
+        var emailVerified = user.emailVerified;
+        var photoURL = user.photoURL;
+        var isAnonymous = user.isAnonymous;
+        var uid = user.uid;
+        var providerData = user.providerData;
+
+        store.commit('WATCH_USER', {
+          displayName: displayName,
+          email: email,
+          emailVerified: emailVerified,
+          photoURL: photoURL,
+          isAnonymous: isAnonymous,
+          uid: uid,
+          providerData: providerData,
+        });
+        resolve();
+      } else {
+        console.log("onAuthStateChanged - in else");
+        // reject('error-error');
+      }
+    })
+  })
+}
+
 export default {
-  createPage ({commit}, payload) {
+  async createPage ({commit}, payload) {
+    console.log("actions - createPage called!");
     const {postID} = payload;
     firebase.firestore().collection('test').doc(postID).set(payload)
-      .then(r => {
-        console.log(r);
-        commit(CREATE_POST, r.data);
+      .then(function(){
+        console.log("beforeAlgolia payload : ", payload);
+        Algolia.addSingleIndexWithId(payload)
+          .then(algoliaRes => {
+            console.log("algoliaRes : ", algoliaRes);
+            console.log("algoliaRes - payload : ", payload);
+            commit(CREATE_POST, payload);
+          })
       })
       .catch(e => console.log(e))
   },
   async fetchPostList ({commit}) {
     console.log("fetchPostList actions called!");
-    const snapshot = await firebase.firestore().collection("test").get();
-    snapshot.forEach(v => {
-      const data = v.data();
-    })
+    // const snapshot = await firebase.firestore().collection("test").get();
+    // snapshot.forEach(v => {
+    //   const data = v.data();
+    // })
 
     return firebase.firestore().collection("test").get()
       .then(snapshot => {
@@ -74,26 +118,39 @@ export default {
       title: title,
       curTime: curTime,
     }).then(function(){
-      commit(UPDATE_POST_BY_ID, {contents: payload, postID: postID});
+      Algolia.editIndexById(payload)
+        .then((objectID) => {
+          commit(UPDATE_POST_BY_ID, {contents: payload, postID: postID});
+        })
     }).catch(function(e){
       alert(e);
     })
   },
   async deletePostByIndex({commit, state}, postIndex){
+    console.log("actions - deletePostByIndex - postIndex : ", postIndex);
     const tempID = getPostID(state, postIndex);
-    return firebase.firestore().collection("test").doc(tempID).delete().then(function(){
-      commit(DELETE_POST_BY_ID, {postId: postIndex});
-    })
+    return firebase.firestore().collection("test").doc(tempID).delete()
+      .then(function(){
+        Algolia.deleteIndexById(tempID)
+          .then(() => {
+            console.log("actions - deletePostByIndex - in then");
+            commit(DELETE_POST_BY_ID, {postId: postIndex});
+          })
+
+      })
   },
   async signupAction({commit, state}, userInfo){
     const {name, email, password} = userInfo;
+    console.log("signupAction - userinfo : ", userInfo);
     await firebase.auth().createUserWithEmailAndPassword(email, password)
-      .then(function(result) {
-        return result.user.updateProfile({
+      .then(async function(result) {
+        console.log("signupAction - result : ", result);
+        await result.user.updateProfile({
           displayName: name
         })
       })
-      .then(function(result) {
+      .then(() => {
+        getUserStatus(commit);
         router.push({name: 'main'});
       })
       .catch(function(error) {
@@ -117,8 +174,7 @@ export default {
           .then(function(result){
             var token = result.credential.accessToken;
             var user = result.user;
-            console.log("token : ", token);
-            console.log("user : ", user);
+            getUserStatus(commit);
             commit(SIGN_IN);
           }).catch(function(error) {
             var errorCode = error.code;
@@ -141,6 +197,7 @@ export default {
 
         return firebase.auth().signInWithEmailAndPassword(email, password)
           .then(function(result) {
+            getUserStatus(commit);
             commit(SIGN_IN);
           })
           .catch(function(error) {
@@ -153,72 +210,23 @@ export default {
         var errorMessage = error.message;
       });
   },
-  async signoutAction({commit, state}){
+  async signoutAction({commit, state}, currentPath){ // 꼭 질문! signoutAction 을 했는데 onAuthStateChanged 훅이 왜 호출될까 ?
     console.log("actions -> signoutAction");
     firebase.auth().signOut().then(function() {
-      console.log("Sign-out successful.");
-      commit(SIGN_OUT);
-      // Sign-out successful.
+      commit(SIGN_OUT, currentPath);
     }).catch(function(error) {
       console.log("An error happened.");
       // An error happened.
     });
+  },
+  async algoliaSearch({commit, state}, {keyword, picked}){
+    console.log("actions -> algoliaSearch called!");
+    Algolia.searchIndex({keyword, picked})
+      .then(hits => {
+        commit(ALGOLIA_SEARCH, hits);
+      })
+  },
+  getUserStatus,
 
-  }
-  // signin ({ commit }, payload) {
-  //   return api.post('/auth/signin', {
-  //     email: payload.email,
-  //     password: payload.password
-  //   }).then(res => {
-  //     const { accessToken } = res.data
-  //     commit(SET_ACCESS_TOKEN, accessToken)
-  //     return api.get('/users/me')
-  //   }).then(res => {
-  //     commit(SET_MY_INFO, res.data)
-  //   })
-  // },
-  // signout ({ commit }) {
-  //   commit(DESTROY_MY_INFO)
-  //   commit(DESTROY_ACCESS_TOKEN)
-  // },
-  // signinByToken ({ commit }, token) {
-  //   commit(SET_ACCESS_TOKEN, token)
-  //   return api.get('/users/me')
-  //     .then(res => {
-  //       commit(SET_MY_INFO, res.data)
-  //     })
-  // },
-  // fetchPostList ({ commit }) {
-  //   return api.get('/posts')
-  //     .then(res => {
-  //       commit(FETCH_POST_LIST, res.data)
-  //     })
-  // },
-  // fetchPost ({ commit }, postId) {
-  //   return api.get(`/posts/${postId}`)
-  //     .then(res => {
-  //       commit(FETCH_POST, res.data)
-  //     })
-  // },
-  // createComment ({ commit, state }, comment) {
-  //   const postId = state.post.id
-  //   return api.post(`/posts/${postId}/comments`, { contents: comment })
-  //     .then(res => {
-  //       commit(UPDATE_COMMENT, res.data)
-  //     })
-  // },
-  // deleteComment ({ commit, state }, commentId) {
-  //   const postId = state.post.id
-  //   return api.delete(`/posts/${postId}/comments/${commentId}`)
-  //     .then(res => {
-  //       commit(DELETE_COMMENT, commentId)
-  //     })
-  // },
-  // editComment ({ commit, state }, { commentId, comment }) {
-  //   const postId = state.post.id
-  //   return api.put(`/posts/${postId}/comments/${commentId}`, { contents: comment })
-  //     .then(res => {
-  //       commit(EDIT_COMMENT, res.data)
-  //     })
-  // }
+
 }

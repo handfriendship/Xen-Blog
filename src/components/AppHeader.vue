@@ -1,7 +1,7 @@
 <template>
   <div class="app-header">
     <h1 @click="homeBtn">Xen Media</h1>
-    <div v-if="JSON.stringify(user) !== JSON.stringify({})">
+    <div v-if="isLogin">
       <strong>
         <button @click="toggle">{{ user.displayName }} 님 환영합니다.
           <i v-if="!isActive" class="fas fa-sort-down"></i>
@@ -20,10 +20,14 @@
       <a class="dropdown-item" href="#">Link 2</a>
       <a class="dropdown-item" href="#">Link 3</a>
     </div>
+    state.user : {{user}}
+    <br/>query : {{$route.query}}
   </div>
 </template>
 
 <script>
+import 'firebase/auth';
+import * as firebase from 'firebase/app';
 import {mapState, mapActions} from 'vuex';
 
 export default {
@@ -40,7 +44,8 @@ export default {
   methods: {
     signout: function(){
       alert("로그아웃 되었습니다.");
-      this.signoutAction();
+
+      this.signoutAction(this.$route.fullPath);
       this.isActive = false;
     },
     toggle: function(){
@@ -56,6 +61,16 @@ export default {
   },
   computed: {
     ...mapState(['user']),
+    isLogin() {
+      console.log("this.user : ", this.user);
+      console.log("JSON.stringify(this.user) : ", JSON.stringify(this.user));
+      var result = false;
+      if(JSON.stringify(this.user) !== '{}' && this.user !== null) {
+        result = true;
+      }
+      return result;
+    },
+
   },
 }
 </script>

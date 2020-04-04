@@ -18,22 +18,28 @@ import {
   SIGN_IN,
   WATCH_USER,
   SIGN_OUT,
+  ALGOLIA_SEARCH,
+  REFINED_SEARCHED,
 } from './mutation-types'
 import router from '../router/index.js';
 import Vue from 'vue';
 // import api from '@/api'
 // import Cookies from 'js-cookie'
 var sortPosts = function(state){
-  state.posts.forEach((element, index, array) => {
-    var temp = element.curTime.split('-').join('').split(' ').join('').split(':').join('');
-    element['temp'] = temp;
-  })
+  // state.posts.forEach((element, index, array) => {
+  //   var temp = element.curTime.split('-').join('').split(' ').join('').split(':').join('');
+  //   element['temp'] = temp;
+  // })
+  // state.posts.sort(function(a, b){
+  //   return a.temp < b.temp ? 1 : a.temp > b.temp ? -1 : 0 ;
+  // })
+  // state.posts.forEach((element, index, array) => {
+  //   delete element.temp;
+  // })
   state.posts.sort(function(a, b){
-    return a.temp < b.temp ? 1 : a.temp > b.temp ? -1 : 0 ;
+    return a.postID < b.postID ? 1 : a.postID > b.postID ? -1 : 0 ;
   })
-  state.posts.forEach((element, index, array) => {
-    delete element.temp;
-  })
+
 }
 
 export default {
@@ -120,7 +126,8 @@ export default {
         targetIndex = index;
       }
     })
-    var tempElement = {...state.posts[targetIndex], title: contents.title, content: contents.content, curTime: contents.curTime};
+    // var tempElement = {...state.posts[targetIndex], title: contents.title, content: contents.content, curTime: contents.curTime};
+    var tempElement = {...state.posts[targetIndex], title: contents.title, content: contents.content};
     state.posts.splice(targetIndex, 1, tempElement);
     console.log("mutations - FETCH_POST_LIST state.posts : ", state.posts);
     router.push({name: 'PostViewPage', params: {postId: contents.postId, postID: postID} });
@@ -135,7 +142,8 @@ export default {
     router.push({name: 'main'});
   },
   [WATCH_USER] (state, loginInfo){
-    // var {email, password} = loginInfo;
+    console.log("Mutations - Watch_user called!");
+
     var {displayName, email, emailVerified, photoURL, isAnonymous, uid, providerData} = loginInfo;
     state.user = {
       displayName: displayName,
@@ -147,10 +155,33 @@ export default {
       providerData: providerData
     }
     Vue.prototype.$Cookie.set('user', state.user);
+    console.log("Mutations - Vue.prototype.$Cookie.get : ", Vue.prototype.$Cookie.get());
   },
-  [SIGN_OUT] (state){
+  [SIGN_OUT] (state, currentPath){
+    console.log("Mutations - sign_out called!");
     state.user = null;
     Vue.prototype.$Cookie.remove('user');
-    router.push({name: 'main'});
-  }
+
+    if(currentPath !== '/'){
+      router.push({name: 'main'});
+    }
+  },
+  [ALGOLIA_SEARCH] (state, hits){
+    console.log("Mutations - algolia_search called!");
+    // var highlightResult = hits.map((element) => { // 여기서 highlight 에 comments 가 포함되어있지 않음
+    //   return element._highlightResult;
+    // })
+    state.searched = hits;
+  },
+  [REFINED_SEARCHED] (state, picked){
+    console.log("Mutations - refined_searched - picked : ", picked);
+    var result = state.searched.map(post => {
+      var tempObj = {};
+      for(let element in post){
+        tempObj[element] = post[element].value;
+      }
+      return tempObj;
+    })
+    return result;
+  },
 }

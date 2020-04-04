@@ -18,11 +18,17 @@ export default {
     'PostListPage': PostListPage,
     'AppHeader': AppHeader,
   },
-  created() {
-    document.addEventListener('beforeunload', this.handler);
-  },
-  beforeDestroyed() {
-    console.log("app -> beforeDestroyed");
+  async created() {
+    console.log("app created!");
+    await this.getUserStatus();
+    // var cookieUser = await this.$Cookie.get('user');
+    // var isCookie = cookieUser == JSON.stringify({}) || cookieUser == undefined || cookieUser == null ? 0 : 1;
+    var isLogin = JSON.stringify(this.user) == JSON.stringify({}) ? 0 : 1;
+    console.log("app - created - this.user : ", this.user);
+    if(!isLogin) {
+      console.log("app - created removing cookie..");
+      this.$Cookie.remove('user');
+    }
   },
   methods: {
     handler: function(){
@@ -46,7 +52,7 @@ export default {
       if(curHour < 10) {curHour = `0${curHour}`};
       if(curMonth < 10) {curMonth = `0${curMonth}`};
 
-      var curTime = `${curYear}-${curMonth}-${curDate} ${curHour}:${curMin}`;
+      var curTime = `${curMonth}-${curDate}-${curYear} ${curHour}:${curMin}`;
       return curTime;
     },
     emailExist: function(email){
@@ -92,10 +98,10 @@ export default {
 
       });
     },
-    ...mapActions(['signoutAction']),
+    ...mapActions(['signoutAction', 'getUserStatus']),
   },
   computed: {
-    ...mapState(['posts'])
+    ...mapState(['posts', 'user'])
   }
 }
 </script>

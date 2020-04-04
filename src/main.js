@@ -8,6 +8,7 @@ import store from '@/store'
 import * as firebase from 'firebase/app';
 import VueCookies from 'vue-cookies';
 import vanilla from './vanilla.js';
+import Algolia from './Algolia.js';
 import Cookies from 'js-cookie';
 import {BootstrapVue, IconsPlugin, DropdownPlugin, TablePlugin } from 'bootstrap-vue';
 import 'bootstrap/dist/css/bootstrap.css'
@@ -26,6 +27,7 @@ const firebaseConfig = {
 };
 Vue.config.productionTip = false
 Vue.prototype.$Cookie = Cookies;
+Vue.prototype.$Algolia = Algolia;
 Vue.use(BootstrapVue);
 Vue.use(IconsPlugin);
 Vue.use(DropdownPlugin);
@@ -33,35 +35,6 @@ Vue.use(TablePlugin);
 
 firebase.initializeApp(firebaseConfig);
 
-firebase.auth().onAuthStateChanged((user) => {
-  console.log("onAuthStateChanged hook called!");
-  console.log("Vue.$Cookie : " , Vue.prototype.$Cookie.get());
-  vanilla.foo();
-  if (user) {
-    // User is signed in.
-    var displayName = user.displayName;
-    var email = user.email;
-    var emailVerified = user.emailVerified;
-    var photoURL = user.photoURL;
-    var isAnonymous = user.isAnonymous;
-    var uid = user.uid;
-    var providerData = user.providerData;
-    // ...
-  } else {
-    console.log("onAuthStateChanged hook User is signed out.");
-    // User is signed out.
-    // ...
-  }
-  store.commit('WATCH_USER', {
-    displayName: displayName,
-    email: email,
-    emailVerified: emailVerified,
-    photoURL: photoURL,
-    isAnonymous: isAnonymous,
-    uid: uid,
-    providerData: providerData,
-  });
-})
 /* eslint-disable no-new */
 new Vue({
   el: '#app',

@@ -4,5 +4,5 @@ export default {
   posts: [],
   curPost: {},
   user: {},
-
+  searched: [],
 }
